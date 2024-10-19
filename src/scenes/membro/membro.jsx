@@ -1,83 +1,109 @@
 import { Box, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import { mockDataTeam } from "../../data/mockData";
+import { useState, useEffect } from "react";
+import MembroService from "../../services/MembroService";
 import Button from '@mui/material/Button';
 import Header from "../../components/Header";
 
 const Membro = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  // Estado para armazenar os membros
+  const [team, setTeam] = useState([]);
+
+  // Função para buscar os membros da API
+  const fetchMembros = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+      console.error("Token JWT não encontrado");
+      return;
+      }
+
+      const data = await MembroService.getAllMembros(token);
+      setTeam(data); // Atualiza o estado 'team' com os membros
+    } catch (error) {
+      console.error("Erro ao buscar membros:", error);
+    }
+  };
+
+  // Carrega os membros da API ao montar o componente
+  useEffect(() => {
+    fetchMembros();
+  }, []); // Executa apenas uma vez ao montar o componente
+
   const columns = [
-    // { field: "id", headerName: "ID" },
     {
-      field: "name",
+      field: "nome",
       headerName: "Nome",
-      flex:2,
+      flex: 2,
       cellClassName: "name-column--cell",
-      width: 200,
-      sortable: false,
+      width: 100,
+      sortable: true,
       resizable: false,
     },
     {
-      field: "age",
-      headerName: "Idade",
-      type: "number",
+      field: "sobreNome",
+      headerName: "Sobrenome",
+      type: "text",
       flex: 1,
       headerAlign: "center",
       align: "center",
       width: 100,
-      sortable: false,
+      sortable: true,
       resizable: false,
     },
     {
-      field: "phone",
+      field: "numero_celular",
       headerName: "Celular",
       flex: 1,
       align: "center",
       headerAlign: "center",
       width: 100,
-      sortable: false,
+      sortable: true,
       resizable: false,
     },
     {
       field: "email",
       headerName: "Email",
-      flex:1,
+      flex: 1,
       align: "center",
       headerAlign: "center",
       width: 200,
-      sortable: false,
+      sortable: true,
       resizable: false,
     },
     {
-      field:"funcao_ministerial",
+      field: "funcao_ministerial",
       headerName: "Função Ministerial",
       align: "center",
       flex: 1,
       headerAlign: "center",
       width: 100,
-      sortable: false,
+      sortable: true,
       resizable: false,
     },
-    
     {
-      field: 'actions',
-      headerName: 'Ações',
-      width: 100,
-      headerAlign:"center",
-      align:"center",
-      flex:1,
+      field: "actions",
+      headerName: "Ações",
+      width: 200,
+      headerAlign: "center",
+      align: "center",
+      flex: 1,
       sortable: false,
       filterable: false,
+      resizable: false,
       disableColumnMenu: true,
+      minWidth: 190,
       renderCell: (params) => (
         <>
           <Button
             variant="contained"
             color="primary"
             size="small"
-            style={{ marginRight: 8 }}
+            style={{ marginRight: 5 }}
             onClick={() => handleEdit(params.row.id)}
           >
             Editar
@@ -95,14 +121,25 @@ const Membro = () => {
     },
   ];
 
+  // Função para editar um membro
   const handleEdit = (id) => {
-    console.log(`Editando item com id: ${id}`);
-    // Coloque aqui a lógica de edição
+    // const member continuar daqui!!!!!
   };
-  
-  const handleDelete = (id) => {
-    console.log(`Excluindo item com id: ${id}`);
-    // Coloque aqui a lógica de exclusão
+
+  // Função para excluir um membro
+  const handleDelete = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+      console.error("Token JWT não encontrado");
+      return;
+      }
+
+      await MembroService.deleteMembro(id.toString(),token);
+      setTeam(team.filter((member) => member.id !== id)); // Atualiza a lista removendo o membro excluído
+    } catch (error) {
+      console.error("Erro ao excluir o membro:", error);
+    }
   };
 
   return (
@@ -137,7 +174,8 @@ const Membro = () => {
           },
         }}
       >
-        <DataGrid checkboxSelection rows={mockDataTeam} columns={columns} />
+        {/* Agora usando o estado 'team' para preencher a tabela */}
+        <DataGrid rows={team} columns={columns} />
       </Box>
     </Box>
   );
